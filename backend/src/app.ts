@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes";
 import jobRoutes from "./routes/job.routes";
 import resumeRoutes from "./routes/resume.routes";
@@ -9,8 +10,12 @@ import { errorHandler } from "./middleware/error.middleware";
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:4200",
+    credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoutes);

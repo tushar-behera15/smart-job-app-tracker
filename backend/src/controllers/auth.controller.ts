@@ -7,7 +7,7 @@ import { registerSchema, loginSchema } from "../utils/validation";
 // Generate JWT Token
 const generateToken = (id: number) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
-    expiresIn: "30d",
+    expiresIn: "7d",
   });
 };
 
@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response) => {
   try {
     // Validate input
     const validatedData = registerSchema.parse(req.body);
-    const { email, password } = validatedData;
+    const { email, password, confirmPassword } = validatedData;
 
     // Check if user exists
     const userExists = await findUserByEmail(email);
@@ -31,6 +31,14 @@ export const register = async (req: Request, res: Response) => {
 
     // Create user
     const user = await createUser(email, hashedPassword);
+
+    // Set cookie
+    res.cookie("token", generateToken(user.id), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+    });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -60,8 +68,19 @@ export const login = async (req: Request, res: Response) => {
     const user = await findUserByEmail(email);
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      const token = generateToken(user.id);
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
       res.json({
-        token: generateToken(user.id),
+        message: "Login successful",
+        user: {
+          id: user.id,
+          email: user.email,
+        },
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
