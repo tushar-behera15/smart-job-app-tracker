@@ -1,1 +1,0 @@
-# This is Frontend part of Smart Job Application Tracker
